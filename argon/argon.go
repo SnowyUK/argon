@@ -1,4 +1,4 @@
-package main
+package argon
 
 import (
 	"crypto/aes"
@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-	"time"
 )
 
 // Simple library to support symmetric encryption and decryption of files, including on-the-fly
@@ -42,7 +41,7 @@ func (p PassPhrase) String() string {
 	return string(r)
 }
 
-var salt = []byte{0x26, 0x7e, 0x67, 0x04, 0xee, 0x7f, 0x13, 0x29, 0x9e, 0x6e, 0x50, 0x85}
+var nonce = []byte{0x26, 0x7e, 0x67, 0x04, 0xee, 0x7f, 0x13, 0x29, 0x9e, 0x6e, 0x50, 0x85}
 
 type Argon struct {
 	phrase PassPhrase   // Passphrase used for encryption
@@ -76,12 +75,12 @@ func New(phrase string) (*Argon, error) {
 
 func (a *Argon) Encrypt(src []byte) []byte {
 	// Simple wrapper function to encrypt a bunch of bytes
-	return a.gcm.Seal(nil, salt, src, nil)
+	return a.gcm.Seal(nil, nonce, src, nil)
 }
 
 func (a *Argon) Decrypt(enc []byte) ([]byte, error) {
 	// Simple wrapper to decrypt a bunch of bytes
-	return a.gcm.Open(nil, salt, enc, nil)
+	return a.gcm.Open(nil, nonce, enc, nil)
 }
 
 func (a *Argon) EncryptText(src string) (string, error) {
@@ -93,11 +92,7 @@ func (a *Argon) EncryptText(src string) (string, error) {
 	var b64 = base64.StdEncoding.EncodeToString(enc)
 	var header string
 	const width = 80
-	if Version.Set() {
-		header = fmt.Sprintf("--| argon %s |", Version.Version)
-	} else {
-		header = fmt.Sprintf("--| argon |")
-	}
+	header = fmt.Sprintf("--| argon |")
 	header = Pad(header, width, '-')
 	if strings.HasPrefix(src, header) {
 		return "", fmt.Errorf("Text is already Argon encrypted")
@@ -163,27 +158,3 @@ func Split(src string, width int) []string {
 	}
 	return dst
 }
-
-type VersionInformation struct {
-	// Build information
-	BuildDate time.Time
-	GitHash   string
-	Version   string
-}
-
-func (v VersionInformation) String() string {
-	const hashlen = 8
-	if v.BuildDate.IsZero() {
-		return "No build information available"
-	} else {
-		return fmt.Sprintf("Argon %s (%s) Built %s", v.Version, v.GitHash[:hashlen], v.BuildDate)
-	}
-}
-
-func (v VersionInformation) Set() bool {
-	// Simple wrapper. Has the version string been set by the linker?
-	return !v.BuildDate.IsZero()
-}
-
-var Version VersionInformation // Interpolated by the linker
-
