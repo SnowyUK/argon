@@ -104,13 +104,12 @@ func GetArguments() (passphrase string, filename string, encrypt bool) {
 		os.Exit(ErrBadArgs)
 	}
 
-	if keyfile != "" {
+	if passphrase != "" {
 		if passphrase, err = GetPassphrase(keyfile); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(ErrBadKeyFile)
 		}
 	}
-
 	return
 }
 
