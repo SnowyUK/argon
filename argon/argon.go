@@ -95,7 +95,7 @@ func (a *Argon) EncryptText(src string) (string, error) {
 	header = fmt.Sprintf("--| argon |")
 	header = Pad(header, width, '-')
 	if strings.HasPrefix(src, header) {
-		return "", fmt.Errorf("Text is already Argon encrypted")
+		return "", fmt.Errorf("EncryptText: Text is already Argon encrypted")
 	}
 	var footer = Pad("--| end |", width, '-')
 	bob.WriteString(fmt.Sprintf("%s\n", header))
