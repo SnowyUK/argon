@@ -1,6 +1,7 @@
 package main
 
 import (
+	"argon/argon"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -34,16 +35,9 @@ func GetPassphrase(keyfile string) (string, error) {
 const (
 	ErrBadArgs int = 1 << iota
 	ErrBadKeyFile
-	ErrEncryptionFailed
+	ErrFile
+	ErrEncryption
 )
-
-func EncryptInSitu(filename string) error {
-	return nil
-}
-
-func DecryptInSitu(filename string) error {
-	return nil
-}
 
 func ShowHelp() {
 	const text = `
@@ -80,7 +74,11 @@ func GetArguments() (passphrase string, filename string, encrypt bool) {
 	args = flag.Args()
 
 	if showversion {
-		fmt.Println("argonise ver 1.0")
+		if Version == "" {
+			fmt.Println("argonise unkown version")
+		} else {
+			fmt.Printf("argonise %s (%s) Built %s\n", Version, GitHash[:8], BuildDate)
+		}
 		os.Exit(0)
 	}
 
@@ -90,7 +88,7 @@ func GetArguments() (passphrase string, filename string, encrypt bool) {
 	}
 
 	if len(args) != 2 {
-		fmt.Println("Syntax: argonise {--keyfile filename|--passphrase phrase} {help|encrypt filename|decrypt filename")
+		fmt.Println("Syntax: argonise {--keyfile <filename>|--passphrase <phrase>} {help|encrypt <filename>|decrypt <filename>")
 		os.Exit(ErrBadArgs)
 	}
 
@@ -115,7 +113,68 @@ func GetArguments() (passphrase string, filename string, encrypt bool) {
 
 	return
 }
+
 func main() {
-	passphrase, filename, encrypt := GetArguments()
-	fmt.Printf("Passphrase is '%s' Filename is '%s' Encrypt is %t\n", passphrase, filename, encrypt)
+	var passphrase string
+	var filename string
+	var encrypt bool
+	var err error
+	var a *argon.Argon
+	var buffer []byte
+	var src string
+	var dst string
+	var stat os.FileInfo
+
+	// Get the salient information from the command line
+	passphrase, filename, encrypt = GetArguments()
+
+	// Setup the Argon object with the passphrase
+	if a, err = argon.New(passphrase); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(ErrEncryption)
+	}
+
+	// Check that we've been given a regular file not a directory
+
+	if stat, err = os.Stat(filename); err != nil {
+		fmt.Printf("Can't stat %s: %s\n", filename, err.Error())
+		os.Exit(ErrFile)
+	}
+
+	if stat.IsDir() {
+		fmt.Printf("%s is a directory, not a file\n", filename)
+		os.Exit(ErrFile)
+	}
+
+	// Now try reading the file
+
+	if buffer, err = ioutil.ReadFile(filename); err != nil {
+		fmt.Println(err)
+		os.Exit(ErrFile)
+	}
+
+	src = string(buffer)
+	if len(src) == 0 {
+		fmt.Printf("File %s is empty\n", filename)
+	}
+
+	if encrypt {
+		if dst, err = a.EncryptText(src); err != nil {
+			fmt.Println(err.Error())
+			os.Exit(ErrEncryption)
+		}
+	} else {
+		if dst, err = a.DecryptText(src); err != nil {
+			fmt.Println(err.Error())
+			os.Exit(ErrEncryption)
+		}
+	}
+
+	if err = ioutil.WriteFile(filename, []byte(dst), stat.Mode()); err != nil {
+		fmt.Printf("Error writing %s: %s\n", filename, err.Error())
+	}
 }
+
+var BuildDate string
+var Version string
+var GitHash string
