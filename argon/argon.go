@@ -17,19 +17,19 @@ import (
 // in which can then be encrypted and decrypted in situ from the command line or decrypted on the fly
 // by a program.
 //
-//This technique grew out of using Ansible Vault to encrypt configuration files before
-//committing them to Git. So, ordinarily, the files would be stored as plaintext locally,
-//and then only encrypted using Ansible Vault prior to being committed/pushed. However,
-//Python scripts have access to the Ansible Vault libraries, and so it was possible to
-//have sensitive data permanently encrypted, and only decrypted when the config file needed
-//to be edited, making it inherently more secure.
+// This technique grew out of using Ansible Vault to encrypt configuration files before
+// committing them to Git. So, ordinarily, the files would be stored as plaintext locally,
+// and then only encrypted using Ansible Vault prior to being committed/pushed. However,
+// Python scripts have access to the Ansible Vault libraries, and so it was possible to
+// have sensitive data permanently encrypted, and only decrypted when the config file needed
+// to be edited, making it inherently more secure.
 //
-//Ansible Vault only exists under Linux, and so a Python library called Krypton was
-//developed to allow on-the-fly symmetric decryption etc. under other OS. Argon is a
-//sister project for the Go language.
+// Ansible Vault only exists under Linux, and so a Python library called Krypton was
+// developed to allow on-the-fly symmetric decryption etc. under other OS. Argon is a
+// sister project for the Go language.
 //
-//NOTE THAT ARGON AND KRYPTON FILE FORMATS ARE INCOMPATIBLE. YOU CAN'T DECRYPT AN
-//ARGON FILE USING KRYPTON AND VICE VERSA. YOU HAVE BEEN WARNED.
+// NOTE THAT ARGON AND KRYPTON FILE FORMATS ARE INCOMPATIBLE. YOU CAN'T DECRYPT AN
+// ARGON FILE USING KRYPTON AND VICE VERSA.
 
 type PassPhrase string
 
