@@ -1,2 +1,5 @@
 .secret
 *.txt
+*.xml
+*.iml
+.idea/
